@@ -73,12 +73,22 @@ void OP_1NNN(uint16_t params)
 
 void OP_6XNN(uint16_t params)
 {
-	std::cout << "First time entering this function" << '\n';
 	uint16_t regName = (params & 0x0F00) >> 8; 
 	uint16_t value = (params & 0x00FF); 
 	vx[regName] = value;
-	std::cout << static_cast<int>(regName) << '\n';
 }
+
+void OP_7XNN(uint16_t params) 
+{
+	uint16_t regName = (params & 0x0F00) >> 8; 
+
+	uint16_t value = (params & 0x00FF); 
+
+	vx[regName] += value;
+}
+
+
+
 
 
 void decode(uint16_t instruction)
