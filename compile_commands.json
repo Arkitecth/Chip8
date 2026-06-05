@@ -1,0 +1,14 @@
+[
+  {
+    "file": "main.cpp",
+    "arguments": [
+      "g++",
+      "main.cpp",
+      "-I/opt/homebrew/include",
+      "-o",
+      "main"
+    ],
+    "directory": "/Users/trenttuedon/Development/projects/chip8Emulator",
+    "output": "main"
+  }
+]

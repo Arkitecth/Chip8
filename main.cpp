@@ -2,11 +2,15 @@
 #include <cstddef>
 #include <cstdint>
 #include <fstream>
+#include <SDL3/SDL.h>
 
 unsigned char memory[4096]{};
 uint16_t startingAddress = 0x200;
+uint16_t indexRegister = 0;
 uint16_t pc = startingAddress;
-unsigned char display[64 * 32]{};
+
+uint8_t display[64*32]{}; 
+
 uint8_t vx[16]{};
 
 void loadFont()
@@ -87,8 +91,80 @@ void OP_7XNN(uint16_t params)
 	vx[regName] += value;
 }
 
+void OP_ANNN(uint16_t params)
+{
+	indexRegister = params;
+}
 
 
+void OP_DXYN(uint16_t params)
+{
+	uint16_t param_x=  ((params & 0x0F00) >> 8); 
+	uint16_t param_y =  ((params & 0x00F0) >> 4); 
+	uint16_t num_pixels = (params & 0x000F); 
+
+	uint8_t start_x = vx[param_x] & 63; 
+	uint8_t start_y = vx[param_y] & 31; 
+
+	vx[0xF] = 0;
+
+	for(int i = 0; i < num_pixels; i++) 
+	{
+		if (start_y + i > 31) 
+		{
+			break;
+		}
+		uint8_t spriteData = memory[indexRegister + i]; 
+		int current_y = start_y + i; 
+
+		for(int j = 0; j < 8; j++)
+		{
+			if (start_x + j > 63) 
+			{
+				break;
+			}
+			int current_x = start_x + j; 
+			uint8_t mask = (0x80 >> j);
+			uint8_t pixel = mask & spriteData; 
+
+			int bufferedIndex = current_x + (current_y * 64); 
+			if (pixel != 0) 
+			{
+				if (display[bufferedIndex] == 1) 
+				{
+					display[bufferedIndex] = 0; 
+					vx[0xf] = 1; 
+				}
+				else 
+				{
+					display[bufferedIndex] = 1; 
+				}
+			} 
+		}
+	}
+}
+
+void draw(SDL_Renderer* renderer)
+{
+	const float SCALE_FACTOR = 10.0f;
+	SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255); // White pixels
+	for (int y = 0; y < 32; y++) 
+	{
+		for (int x = 0; x < 64; x++) 
+		{
+			if (display[x + (y * 64)] == 1) 
+			{
+				SDL_FRect rect;
+				rect.x = x * SCALE_FACTOR;
+				rect.y = y * SCALE_FACTOR; 
+				rect.w = SCALE_FACTOR;
+				rect.h = SCALE_FACTOR;
+				SDL_RenderFillRect(renderer, &rect);
+			}
+		}
+	}
+	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); 
+}
 
 
 void decode(uint16_t instruction)
@@ -110,17 +186,17 @@ void decode(uint16_t instruction)
 			OP_6XNN(params); 
 		break;
 
-		// case 0x7:
-		// 	std::cout << "Hello"; 
-		// break;
-		//
-		// case 0xA:
-		// 	std::cout << "Hello"; 
-		// break;
-		//
-		// case 0xD:
-		// 	std::cout << "Hello"; 
-		// break;
+		case 0x7:
+			OP_7XNN(params); 
+		break;
+
+		case 0xA:
+			OP_ANNN(params); 
+		break;
+
+		case 0xD:
+			OP_DXYN(params); 
+		break;
 	}
 }
 
@@ -130,11 +206,27 @@ int main()
 {
 	loadROM("./logo.ch8"); 
 	int counter = 0; 
-	while (counter != 10) 
+	SDL_Window* window{};
+	SDL_Renderer* renderer{};
+	SDL_CreateWindowAndRenderer("Chip8 Emulator", 640, 320, SDL_WINDOW_RESIZABLE, &window, &renderer); 
+	bool done = false; 
+
+	while (!done) 
 	{
+		SDL_Event* e; 
+		while (SDL_PollEvent(e)) 
+		{
+			if (e->type == SDL_EVENT_QUIT) 
+			{
+				done = true;
+			}
+		}
 		uint16_t instruction = fetchInstructions(); 
-		std::cout << std::hex << instruction << '\n';
+
+		SDL_RenderClear(renderer); 
 		decode(instruction); 
-		counter += 1; 
+		draw(renderer); 
+		SDL_RenderPresent(renderer); 
+		//SDL_Delay(2);
 	}
 }
