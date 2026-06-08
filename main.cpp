@@ -1,8 +1,10 @@
 #include "iostream"
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <fstream>
 #include <SDL3/SDL.h>
+#include <vector>
 
 unsigned char memory[4096]{};
 uint16_t startingAddress = 0x200;
@@ -12,7 +14,7 @@ uint16_t pc = startingAddress;
 uint8_t display[64*32]{}; 
 
 uint8_t vx[16]{};
-
+std::vector<uint16_t> stack{};
 void loadFont()
 {
 	unsigned int fontAddress = 0x050; 
@@ -115,18 +117,18 @@ void OP_DXYN(uint16_t params)
 	{
 
 		uint8_t current_y = start_y + y; 
-		// if (current_y > 31) 
-		// {
-		// 	break;
-		// }
+		if (current_y > 31) 
+		{
+			break;
+		}
 		uint8_t sprite_data = memory[indexRegister + y];
 		for(int x = 0; x < 8; x++)
 		{
 			int current_x = start_x + x; 
-			// if (current_x > 63) 
-			// {
-			// 	break;
-			// }
+			if (current_x > 63) 
+			{
+				break;
+			}
 			int bufferedIndex = (current_y * 64) + current_x;
 			uint8_t pixel = ((0x80 >> x) & sprite_data); 
 			if (pixel) 
@@ -142,6 +144,19 @@ void OP_DXYN(uint16_t params)
 		}
 	}
 
+}
+
+void OP_2NNN(uint16_t params)
+{
+	stack.push_back(pc); 
+	pc = params;
+}
+
+void OP_00EE()
+{
+	uint16_t value = stack.back();  
+	stack.pop_back(); 
+	pc = value;
 }
 
 void draw(SDL_Renderer* renderer)
@@ -176,12 +191,22 @@ void decode(uint16_t instruction)
 	switch (opcode) 
 	{
 		case 0x0:
-			OP_00E0(); 
+			if (params == 0xE0) 
+			{
+				OP_00E0(); 
+			} 
+			else 
+			{
+				OP_00EE();
+			}
 		break;
 
 		case 0x1:
 			OP_1NNN(params);
 		break;
+
+		case 0x2: 
+			OP_2NNN(params); 
 
 		case 0x6:
 			OP_6XNN(params); 
@@ -231,3 +256,5 @@ int main()
 		SDL_Delay(2);
 	}
 }
+
+
