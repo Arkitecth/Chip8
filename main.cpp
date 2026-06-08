@@ -1,9 +1,9 @@
 #include "iostream"
-#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <fstream>
 #include <SDL3/SDL.h>
+#include <sys/types.h>
 #include <vector>
 
 unsigned char memory[4096]{};
@@ -159,6 +159,108 @@ void OP_00EE()
 	pc = value;
 }
 
+void OP_3XNN(uint16_t params)
+{
+	uint16_t regValue = (params & 0x0F00) >> 8; 
+
+	uint8_t num_value= (params & 0x00FF); 
+
+	if (vx[regValue] == num_value) 
+	{
+		pc += 1; 
+	}
+}
+
+void OP_4XNN(uint16_t params)
+{
+	uint16_t regValue = (params & 0x0F00) >> 8; 
+
+	uint8_t num_value= (params & 0x00FF); 
+
+	if (vx[regValue] != num_value) 
+	{
+		pc += 1; 
+	}
+}
+
+void OP_5XY0(uint16_t params)
+{
+
+	uint16_t regValue = (params & 0x0F00) >> 8; 
+
+	uint8_t num_value= (params & 0x00FF); 
+
+	if (vx[regValue] == num_value) 
+	{
+		pc += 1; 
+	}
+
+}
+
+void OP_8XY0(uint16_t params)
+{
+	uint16_t regValue_x = (params & 0x0F00) >> 8; 
+	uint16_t regValue_y = (params & 0x00F0) >> 4; 
+	vx[regValue_x] = vx[regValue_y];
+}
+
+void OP_8XY1(uint16_t params)
+{
+	uint16_t regValue_x = (params & 0x0F00) >> 8; 
+	uint16_t regValue_y = (params & 0x00F0) >> 4; 
+	vx[regValue_x] |= vx[regValue_y];
+}
+
+void OP_8XY2(uint16_t params)
+{
+
+	uint16_t regValue_x = (params & 0x0F00) >> 8; 
+	uint16_t regValue_y = (params & 0x00F0) >> 4; 
+	vx[regValue_x] &= vx[regValue_y];
+}
+
+void OP_8XY3(uint16_t params)
+{
+	uint16_t regValue_x = (params & 0x0F00) >> 8; 
+	uint16_t regValue_y = (params & 0x00F0) >> 4; 
+	vx[regValue_x] ^= vx[regValue_y];
+}
+
+void OP_8XY4(uint16_t params)
+{
+	uint16_t regValue_x = (params & 0x0F00) >> 8; 
+	uint16_t regValue_y = (params & 0x00F0) >> 4; 
+
+	if (vx[regValue_x] + vx[regValue_y] > 255) 
+	{
+		vx[0xF] = 1;
+	} 
+	else 
+	{
+		vx[0xF] = 0;
+	}
+	vx[regValue_x] += vx[regValue_y];
+}
+
+// void OP_8XY5(uint16_t params)
+// {
+// 	uint16_t regValue_x = (params & 0x0F00) >> 8; 
+// 	uint16_t regValue_y = (params & 0x00F0) >> 4; 
+// }
+
+void OP_9XY0(uint16_t params)
+{
+	uint16_t regValue = (params & 0x0F00) >> 8; 
+
+	uint8_t num_value= (params & 0x00FF); 
+
+	if (vx[regValue] != num_value) 
+	{
+		pc += 1; 
+	}
+}
+
+
 void draw(SDL_Renderer* renderer)
 {
 	const float SCALE = 10.0f; 
@@ -187,6 +289,7 @@ void decode(uint16_t instruction)
 {
 	uint16_t opcode = (instruction & 0xF000) >> 12;
 	uint16_t params = (instruction & 0x0FFF);
+	uint16_t operation = (instruction & 0x000F); 
 
 	switch (opcode) 
 	{
@@ -207,6 +310,11 @@ void decode(uint16_t instruction)
 
 		case 0x2: 
 			OP_2NNN(params); 
+		break;
+
+		case 0x3: 
+			OP_3XNN(params); 
+		break;
 
 		case 0x6:
 			OP_6XNN(params); 
@@ -214,6 +322,24 @@ void decode(uint16_t instruction)
 
 		case 0x7:
 			OP_7XNN(params); 
+		break;
+
+		case 0x8: 
+			switch (operation) 
+			{
+				case 0x0: 
+					OP_8XY0(params); 
+				break;
+
+				case 0x1:
+					OP_8XY1(params); 
+				break;
+
+				case 0x2: 
+					OP_
+
+					
+			}
 		break;
 
 		case 0xA:
@@ -224,6 +350,7 @@ void decode(uint16_t instruction)
 			OP_DXYN(params); 
 		break;
 	}
+
 }
 
 
