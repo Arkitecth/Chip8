@@ -1,6 +1,8 @@
 #include "iostream"
 #include <cstddef>
 #include <cstdint>
+#include <cstdlib>
+#include <ctime>
 #include <fstream>
 #include <SDL3/SDL.h>
 #include <sys/types.h>
@@ -15,6 +17,13 @@ uint8_t display[64*32]{};
 
 uint8_t vx[16]{};
 std::vector<uint16_t> stack{};
+uint8_t keypad[16]{}; 
+
+uint8_t delayTimer{}; 
+
+uint8_t soundTimer{}; 
+
+
 void loadFont()
 {
 	unsigned int fontAddress = 0x050; 
@@ -43,6 +52,95 @@ void loadFont()
 	}
 }
 
+void handkeKeyPad(SDL_Event* e)
+{
+	if (e->key.type == SDL_EVENT_KEY_DOWN) 
+	{
+		if (e->key.scancode == SDL_SCANCODE_1) 
+		{
+			keypad[0x0] = 1; 
+		}
+
+		else if (e->key.scancode == SDL_SCANCODE_2) 
+		{
+			keypad[0x1] = 1; 
+		}
+		else if (e->key.scancode == SDL_SCANCODE_3) 
+		{
+			keypad[0x2] = 1; 
+		}
+		else if (e->key.scancode == SDL_SCANCODE_4) 
+		{
+			keypad[0x3] = 1; 
+		}
+		else if (e->key.scancode == SDL_SCANCODE_Q) 
+		{
+			keypad[0x4] = 1; 
+		}
+		else if (e->key.scancode == SDL_SCANCODE_W) 
+		{
+			keypad[0x5] = 1; 
+		
+		}
+		else if (e->key.scancode == SDL_SCANCODE_E) 
+		{
+			keypad[0x6] = 1; 
+		}
+
+		else if (e->key.scancode == SDL_SCANCODE_R) 
+		{
+			keypad[0x7] = 1; 
+		}
+
+		else if (e->key.scancode == SDL_SCANCODE_A) 
+		{
+			keypad[0x8] = 1; 
+		}
+		else if (e->key.scancode == SDL_SCANCODE_S) 
+		{
+			keypad[0x9] = 1; 
+		}
+
+		else if (e->key.scancode == SDL_SCANCODE_D) 
+		{
+			keypad[0xA] = 1; 
+		}
+
+		else if (e->key.scancode == SDL_SCANCODE_F) 
+		{
+			keypad[0xB] = 1; 
+		}
+
+		else if (e->key.scancode == SDL_SCANCODE_Z) 
+		{
+			keypad[0xC] = 1; 
+		}
+
+		else if (e->key.scancode == SDL_SCANCODE_X) 
+		{
+			keypad[0xD] = 1; 
+		}
+
+		else if (e->key.scancode == SDL_SCANCODE_C) 
+		{
+			keypad[0xE] = 1; 
+		}
+
+		else if (e->key.scancode == SDL_SCANCODE_V) 
+		{
+			keypad[0xF] = 1; 
+		}
+	} 
+	else 
+	{
+		for(int i = 0; i < 16; i++)
+		{
+			keypad[i] = 0; 
+		}
+	}
+}
+
+
 void loadROM(std::string_view filePath) 
 {
 	std::ifstream file{filePath.data(), std::ios::binary};
@@ -55,6 +153,7 @@ void loadROM(std::string_view filePath)
 	}
 	loadFont();
 }
+
 
 uint16_t fetchInstructions() 
 {
@@ -97,6 +196,44 @@ void OP_ANNN(uint16_t params)
 {
 	indexRegister = params;
 }
+
+void OP_BNNN(uint16_t params)
+{
+	indexRegister = params + vx[0];
+}
+
+void OP_CXNN(uint16_t params)
+{
+	uint16_t regName = (params & 0x0F00) >> 8; 
+	uint16_t value = (params & 0x00FF); 
+
+	std::srand(time(nullptr)); 
+
+	int randomNumber = (std::rand() % 1000);
+
+	vx[regName] = value & randomNumber;
+}
+
+void OP_EX9E(uint16_t params)
+{
+	uint16_t regName = (params & 0x0F00) >> 8; 
+
+	if (keypad[vx[regName]]) 
+	{
+		pc += 2; 
+	}
+}
+
+void OP_EXA1(uint16_t params)
+{
+	uint16_t regName = (params & 0x0F00) >> 8; 
+
+	if (keypad[vx[regName]] == 0) 
+	{
+		pc += 2; 
+	}
+}
+
 
 
 void OP_DXYN(uint16_t params)
@@ -167,7 +304,7 @@ void OP_3XNN(uint16_t params)
 
 	if (vx[regValue] == num_value) 
 	{
-		pc += 1; 
+		pc += 2; 
 	}
 }
 
@@ -179,7 +316,7 @@ void OP_4XNN(uint16_t params)
 
 	if (vx[regValue] != num_value) 
 	{
-		pc += 1; 
+		pc += 2; 
 	}
 }
 
@@ -192,7 +329,7 @@ void OP_5XY0(uint16_t params)
 
 	if (vx[regValue] == num_value) 
 	{
-		pc += 1; 
+		pc += 2; 
 	}
 
 }
@@ -242,11 +379,72 @@ void OP_8XY4(uint16_t params)
 	vx[regValue_x] += vx[regValue_y];
 }
 
-// void OP_8XY5(uint16_t params)
-// {
-// 	uint16_t regValue_x = (params & 0x0F00) >> 8; 
-// 	uint16_t regValue_y = (params & 0x00F0) >> 4; 
-// }
+void OP_8XY5(uint16_t params)
+{
+	uint16_t regValue_x = (params & 0x0F00) >> 8; 
+	uint16_t regValue_y = (params & 0x00F0) >> 4; 
+
+	if (vx[regValue_x] >= vx[regValue_y]) 
+	{
+		vx[0xf] = 1; 
+	} 
+	else 
+	{
+		vx[0xf] = 0; 
+	}
+	vx[regValue_x] -= vx[regValue_y];
+}
+
+void OP_8XY7(uint16_t params)
+{
+	uint16_t regValue_x = (params & 0x0F00) >> 8; 
+	uint16_t regValue_y = (params & 0x00F0) >> 4; 
+
+	if (vx[regValue_x] >= vx[regValue_y]) 
+	{
+		vx[0xf] = 1; 
+	} 
+	else 
+	{
+		vx[0xf] = 0; 
+	}
+	vx[regValue_y] -= vx[regValue_x];
+}
+
+void OP_8XY6(uint16_t params)
+{
+	uint16_t regValue_x = (params & 0x0F00) >> 8; 
+	uint16_t regValue_y = (params & 0x00F0) >> 4; 
+
+	vx[regValue_x] = vx[regValue_y];
+	if (vx[regValue_x] == 0) 
+	{
+		vx[0xf] = 0; 
+	} 
+	else 
+	{
+		vx[0xf] = 1; 
+	}
+	vx[regValue_x] = vx[regValue_x] >> 1; 
+}
+
+void OP_8XYE(uint16_t params)
+{
+	uint16_t regValue_x = (params & 0x0F00) >> 8; 
+	uint16_t regValue_y = (params & 0x00F0) >> 4; 
+
+	vx[regValue_x] = vx[regValue_y];
+	if (vx[regValue_x] == 0) 
+	{
+		vx[0xf] = 0; 
+	} 
+	else 
+	{
+		vx[0xf] = 1; 
+	}
+	vx[regValue_x] = vx[regValue_x] << 1; 
+}
+
 
 void OP_9XY0(uint16_t params)
 {
@@ -256,9 +454,31 @@ void OP_9XY0(uint16_t params)
 
 	if (vx[regValue] != num_value) 
 	{
-		pc += 1; 
+		pc += 2; 
 	}
 }
+
+void OP_FX07(uint16_t params)
+{
+	uint16_t regValue = (params & 0x0F00) >> 8; 
+
+	vx[regValue] = delayTimer;
+}
+
+void OP_FX15(uint16_t params)
+{
+	uint16_t regValue = (params & 0x0F00) >> 8; 
+
+	delayTimer = vx[regValue];
+}
+
+void OP_FX18(uint16_t params)
+{
+	uint16_t regValue = (params & 0x0F00) >> 8; 
+
+	soundTimer = vx[regValue]; 
+}
+
 
 
 void draw(SDL_Renderer* renderer)
@@ -336,9 +556,32 @@ void decode(uint16_t instruction)
 				break;
 
 				case 0x2: 
-					OP_
+					OP_8XY2(params); 
+				break;
 
-					
+				case 0x3: 
+					OP_8XY3(params); 
+				break;
+
+				case 0x4: 
+					OP_8XY4(params); 
+				break;
+
+				case 0x5: 
+					OP_8XY5(params); 
+				break;
+
+				case 0x6: 
+					OP_8XY6(params); 
+				break;
+
+				case 0x7: 
+					OP_8XY7(params); 
+				break;
+
+				case 0xE:
+					OP_8XYE(params); 
+				break;
 			}
 		break;
 
@@ -346,8 +589,18 @@ void decode(uint16_t instruction)
 			OP_ANNN(params); 
 		break;
 
+		case 0xB: 
+			OP_BNNN(params); 
+		break;
+
+		case 0xC: 
+			OP_CXNN(params); 
+		break;
+
 		case 0xD:
 			OP_DXYN(params); 
+
+		case 0xE:
 		break;
 	}
 
@@ -372,6 +625,90 @@ int main()
 			if (e->type == SDL_EVENT_QUIT) 
 			{
 				done = true;
+			}
+			if (e->type == SDL_EVENT_KEY_DOWN) 
+			{
+				if (e->key.scancode == SDL_SCANCODE_1) 
+				{
+					keypad[0x0] = 1; 
+				}
+
+				else if (e->key.scancode == SDL_SCANCODE_2) 
+				{
+					keypad[0x1] = 1; 
+				
+				}
+				else if (e->key.scancode == SDL_SCANCODE_3) 
+				{
+					keypad[0x2] = 1; 
+				
+				}
+				else if (e->key.scancode == SDL_SCANCODE_4) 
+				{
+					keypad[0x3] = 1; 
+				
+				}
+				else if (e->key.scancode == SDL_SCANCODE_Q) 
+				{
+					keypad[0x4] = 1; 
+				
+				}
+				else if (e->key.scancode == SDL_SCANCODE_W) 
+				{
+					keypad[0x5] = 1; 
+				
+				}
+
+				else if (e->key.scancode == SDL_SCANCODE_E) 
+				{
+					keypad[0x6] = 1; 
+				
+				}
+
+				else if (e->key.scancode == SDL_SCANCODE_R) 
+				{
+					keypad[0x7] = 1; 
+				}
+
+				else if (e->key.scancode == SDL_SCANCODE_A) 
+				{
+					keypad[0x8] = 1; 
+				}
+
+				else if (e->key.scancode == SDL_SCANCODE_S) 
+				{
+					keypad[0x9] = 1; 
+				}
+
+				else if (e->key.scancode == SDL_SCANCODE_D) 
+				{
+					keypad[0xA] = 1; 
+				}
+
+				else if (e->key.scancode == SDL_SCANCODE_F) 
+				{
+					keypad[0xB] = 1; 
+				}
+
+				else if (e->key.scancode == SDL_SCANCODE_Z) 
+				{
+					keypad[0xC] = 1; 
+				}
+
+				else if (e->key.scancode == SDL_SCANCODE_X) 
+				{
+					keypad[0xD] = 1; 
+				}
+
+				else if (e->key.scancode == SDL_SCANCODE_C) 
+				{
+					keypad[0xE] = 1; 
+				}
+
+				else if (e->key.scancode == SDL_SCANCODE_V) 
+				{
+					keypad[0xF] = 1; 
+				}
 			}
 		}
 		uint16_t instruction = fetchInstructions(); 
