@@ -18,9 +18,7 @@ uint8_t display[64*32]{};
 uint8_t vx[16]{};
 std::vector<uint16_t> stack{};
 uint8_t keypad[16]{}; 
-
 uint8_t delayTimer{}; 
-
 uint8_t soundTimer{}; 
 
 
@@ -479,6 +477,56 @@ void OP_FX18(uint16_t params)
 	soundTimer = vx[regValue]; 
 }
 
+void OP_FX1E(uint16_t params)
+{
+	uint16_t regValue = (params & 0x0F00) >> 8; 
+	indexRegister += vx[regValue];
+}
+
+void OP_FX0A(uint16_t params)
+{
+	uint16_t regValue = (params & 0x0F00) >> 8; 
+	if (vx[regValue] != 1) 
+	{
+		pc -= 1; 
+	}
+}
+
+void OP_FX29(uint16_t params)
+{
+	uint16_t regValue = (params & 0x0F00) >> 8; 
+	indexRegister = vx[regValue];
+}
+
+void OP_FX33(uint16_t params)
+{
+	uint16_t regValue = (params & 0x0F00) >> 8; 
+	int x = (vx[regValue] >> 4) * 16 + (vx[regValue] >> 8); 
+	int hundreth_place = x / 100; 
+	int tenth_place = (x % 100) / 10; 
+	int one_place = x % 10; 
+	memory[indexRegister] = hundreth_place;
+	memory[indexRegister + 1] = tenth_place;
+	memory[indexRegister + 2] = one_place;
+}
+
+void OP_FX55(uint16_t params)
+{
+	uint16_t regValue = (params & 0x0F00) >> 8; 
+	for(int i = 0; i < regValue; i++)
+	{
+		memory[indexRegister + i] = vx[i]; 
+	}
+}
+
+void OP_FX65(uint16_t params)
+{
+	uint16_t regValue = (params & 0x0F00) >> 8; 
+	for(int i = 0; i < regValue; i++)
+	{
+		vx[i] = memory[indexRegister + i]; 
+	}
+}
 
 
 void draw(SDL_Renderer* renderer)
@@ -610,115 +658,124 @@ void decode(uint16_t instruction)
 
 int main() 
 {
-	loadROM("./logo.ch8"); 
-	int counter = 0; 
-	SDL_Window* window{};
-	SDL_Renderer* renderer{};
-	SDL_CreateWindowAndRenderer("Chip8 Emulator", 640, 320, SDL_WINDOW_RESIZABLE, &window, &renderer); 
-	bool done = false; 
-
-	while (!done) 
-	{
-		SDL_Event* e; 
-		while (SDL_PollEvent(e)) 
-		{
-			if (e->type == SDL_EVENT_QUIT) 
-			{
-				done = true;
-			}
-			if (e->type == SDL_EVENT_KEY_DOWN) 
-			{
-				if (e->key.scancode == SDL_SCANCODE_1) 
-				{
-					keypad[0x0] = 1; 
-				}
-
-				else if (e->key.scancode == SDL_SCANCODE_2) 
-				{
-					keypad[0x1] = 1; 
-				
-				}
-				else if (e->key.scancode == SDL_SCANCODE_3) 
-				{
-					keypad[0x2] = 1; 
-				
-				}
-				else if (e->key.scancode == SDL_SCANCODE_4) 
-				{
-					keypad[0x3] = 1; 
-				
-				}
-				else if (e->key.scancode == SDL_SCANCODE_Q) 
-				{
-					keypad[0x4] = 1; 
-				
-				}
-				else if (e->key.scancode == SDL_SCANCODE_W) 
-				{
-					keypad[0x5] = 1; 
-				
-				}
-
-				else if (e->key.scancode == SDL_SCANCODE_E) 
-				{
-					keypad[0x6] = 1; 
-				
-				}
-
-				else if (e->key.scancode == SDL_SCANCODE_R) 
-				{
-					keypad[0x7] = 1; 
-				}
-
-				else if (e->key.scancode == SDL_SCANCODE_A) 
-				{
-					keypad[0x8] = 1; 
-				}
-
-				else if (e->key.scancode == SDL_SCANCODE_S) 
-				{
-					keypad[0x9] = 1; 
-				}
-
-				else if (e->key.scancode == SDL_SCANCODE_D) 
-				{
-					keypad[0xA] = 1; 
-				}
-
-				else if (e->key.scancode == SDL_SCANCODE_F) 
-				{
-					keypad[0xB] = 1; 
-				}
-
-				else if (e->key.scancode == SDL_SCANCODE_Z) 
-				{
-					keypad[0xC] = 1; 
-				}
-
-				else if (e->key.scancode == SDL_SCANCODE_X) 
-				{
-					keypad[0xD] = 1; 
-				}
-
-				else if (e->key.scancode == SDL_SCANCODE_C) 
-				{
-					keypad[0xE] = 1; 
-				}
-
-				else if (e->key.scancode == SDL_SCANCODE_V) 
-				{
-					keypad[0xF] = 1; 
-				}
-			}
-		}
-		uint16_t instruction = fetchInstructions(); 
-
-		SDL_RenderClear(renderer); 
-		decode(instruction); 
-		draw(renderer); 
-		SDL_RenderPresent(renderer); 
-		SDL_Delay(2);
-	}
+	uint16_t params; 
+	OP_FX333(params); 
+	// loadROM("./logo.ch8"); 
+	// int counter = 0; 
+	// SDL_Window* window{};
+	// SDL_Renderer* renderer{};
+	// SDL_CreateWindowAndRenderer("Chip8 Emulator", 640, 320, SDL_WINDOW_RESIZABLE, &window, &renderer); 
+	// bool done = false; 
+	//
+	// while (!done) 
+	// {
+	// 	SDL_Event* e; 
+	// 	while (SDL_PollEvent(e)) 
+	// 	{
+	// 		if (e->type == SDL_EVENT_QUIT) 
+	// 		{
+	// 			done = true;
+	// 		}
+	// 		if (e->type == SDL_EVENT_KEY_DOWN) 
+	// 		{
+	// 			if (e->key.scancode == SDL_SCANCODE_1) 
+	// 			{
+	// 				keypad[0x0] = 1; 
+	// 			}
+	//
+	// 			else if (e->key.scancode == SDL_SCANCODE_2) 
+	// 			{
+	// 				keypad[0x1] = 1; 
+	//
+	// 			}
+	// 			else if (e->key.scancode == SDL_SCANCODE_3) 
+	// 			{
+	// 				keypad[0x2] = 1; 
+	//
+	// 			}
+	// 			else if (e->key.scancode == SDL_SCANCODE_4) 
+	// 			{
+	// 				keypad[0x3] = 1; 
+	//
+	// 			}
+	// 			else if (e->key.scancode == SDL_SCANCODE_Q) 
+	// 			{
+	// 				keypad[0x4] = 1; 
+	//
+	// 			}
+	// 			else if (e->key.scancode == SDL_SCANCODE_W) 
+	// 			{
+	// 				keypad[0x5] = 1; 
+	//
+	// 			}
+	//
+	// 			else if (e->key.scancode == SDL_SCANCODE_E) 
+	// 			{
+	// 				keypad[0x6] = 1; 
+	//
+	// 			}
+	//
+	// 			else if (e->key.scancode == SDL_SCANCODE_R) 
+	// 			{
+	// 				keypad[0x7] = 1; 
+	// 			}
+	//
+	// 			else if (e->key.scancode == SDL_SCANCODE_A) 
+	// 			{
+	// 				keypad[0x8] = 1; 
+	// 			}
+	//
+	// 			else if (e->key.scancode == SDL_SCANCODE_S) 
+	// 			{
+	// 				keypad[0x9] = 1; 
+	// 			}
+	//
+	// 			else if (e->key.scancode == SDL_SCANCODE_D) 
+	// 			{
+	// 				keypad[0xA] = 1; 
+	// 			}
+	//
+	// 			else if (e->key.scancode == SDL_SCANCODE_F) 
+	// 			{
+	// 				keypad[0xB] = 1; 
+	// 			}
+	//
+	// 			else if (e->key.scancode == SDL_SCANCODE_Z) 
+	// 			{
+	// 				keypad[0xC] = 1; 
+	// 			}
+	//
+	// 			else if (e->key.scancode == SDL_SCANCODE_X) 
+	// 			{
+	// 				keypad[0xD] = 1; 
+	// 			}
+	//
+	// 			else if (e->key.scancode == SDL_SCANCODE_C) 
+	// 			{
+	// 				keypad[0xE] = 1; 
+	// 			}
+	//
+	// 			else if (e->key.scancode == SDL_SCANCODE_V) 
+	// 			{
+	// 				keypad[0xF] = 1; 
+	// 			}
+	// 		}
+	// 	}
+	// 	if (delayTimer > 0) 
+	// 	{
+	// 		delayTimer--; 
+	// 	}
+	// 	if (soundTimer > 0) 
+	// 	{
+	// 		soundTimer--; 
+	// 	}
+	// 	uint16_t instruction = fetchInstructions(); 
+	// 	SDL_RenderClear(renderer); 
+	// 	decode(instruction); 
+	// 	draw(renderer); 
+	// 	SDL_RenderPresent(renderer); 
+	// 	SDL_Delay(16);
+	// }
 }
 
 
