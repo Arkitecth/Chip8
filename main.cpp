@@ -52,88 +52,33 @@ void loadFont()
 
 void handkeKeyPad(SDL_Event* e)
 {
-	if (e->key.type == SDL_EVENT_KEY_DOWN) 
+	int8_t targetKey = 0xFF; 
+	if (e->key.scancode == SDL_SCANCODE_1)	    targetKey = 0x1;
+	else if (e->key.scancode == SDL_SCANCODE_2) targetKey = 0x2;
+	else if (e->key.scancode == SDL_SCANCODE_3) targetKey = 0x3;
+	else if (e->key.scancode == SDL_SCANCODE_4) targetKey = 0xC;
+	else if (e->key.scancode == SDL_SCANCODE_Q) targetKey = 0x4;
+	else if (e->key.scancode == SDL_SCANCODE_W) targetKey = 0x5;
+	else if (e->key.scancode == SDL_SCANCODE_E) targetKey = 0x6;
+	else if (e->key.scancode == SDL_SCANCODE_R) targetKey = 0xD;
+	else if (e->key.scancode == SDL_SCANCODE_A) targetKey = 0x7;
+	else if (e->key.scancode == SDL_SCANCODE_S) targetKey = 0x8;
+	else if (e->key.scancode == SDL_SCANCODE_D) targetKey = 0x9;
+	else if (e->key.scancode == SDL_SCANCODE_F) targetKey = 0xE;
+	else if (e->key.scancode == SDL_SCANCODE_Z) targetKey = 0xA;
+	else if (e->key.scancode == SDL_SCANCODE_X) targetKey = 0x0;
+	else if (e->key.scancode == SDL_SCANCODE_C) targetKey = 0xB;
+	else if (e->key.scancode == SDL_SCANCODE_V) targetKey = 0xF;
+
+	if (targetKey != 0xFF)
 	{
-		if (e->key.scancode == SDL_SCANCODE_1) 
+		if (e->type == SDL_EVENT_KEY_DOWN) 
 		{
-			keypad[0x0] = 1; 
+		    keypad[targetKey] = 1; 
 		}
-
-		else if (e->key.scancode == SDL_SCANCODE_2) 
+		else if (e->type == SDL_EVENT_KEY_UP) 
 		{
-			keypad[0x1] = 1; 
-		}
-		else if (e->key.scancode == SDL_SCANCODE_3) 
-		{
-			keypad[0x2] = 1; 
-		}
-		else if (e->key.scancode == SDL_SCANCODE_4) 
-		{
-			keypad[0x3] = 1; 
-		}
-		else if (e->key.scancode == SDL_SCANCODE_Q) 
-		{
-			keypad[0x4] = 1; 
-		}
-		else if (e->key.scancode == SDL_SCANCODE_W) 
-		{
-			keypad[0x5] = 1; 
-		
-		}
-		else if (e->key.scancode == SDL_SCANCODE_E) 
-		{
-			keypad[0x6] = 1; 
-		}
-
-		else if (e->key.scancode == SDL_SCANCODE_R) 
-		{
-			keypad[0x7] = 1; 
-		}
-
-		else if (e->key.scancode == SDL_SCANCODE_A) 
-		{
-			keypad[0x8] = 1; 
-		}
-		else if (e->key.scancode == SDL_SCANCODE_S) 
-		{
-			keypad[0x9] = 1; 
-		}
-
-		else if (e->key.scancode == SDL_SCANCODE_D) 
-		{
-			keypad[0xA] = 1; 
-		}
-
-		else if (e->key.scancode == SDL_SCANCODE_F) 
-		{
-			keypad[0xB] = 1; 
-		}
-
-		else if (e->key.scancode == SDL_SCANCODE_Z) 
-		{
-			keypad[0xC] = 1; 
-		}
-
-		else if (e->key.scancode == SDL_SCANCODE_X) 
-		{
-			keypad[0xD] = 1; 
-		}
-
-		else if (e->key.scancode == SDL_SCANCODE_C) 
-		{
-			keypad[0xE] = 1; 
-		}
-
-		else if (e->key.scancode == SDL_SCANCODE_V) 
-		{
-			keypad[0xF] = 1; 
-		}
-	} 
-	else 
-	{
-		for(int i = 0; i < 16; i++)
-		{
-			keypad[i] = 0; 
+			keypad[targetKey] = 0; 
 		}
 	}
 }
@@ -207,7 +152,7 @@ void OP_CXNN(uint16_t params)
 
 	std::srand(time(nullptr)); 
 
-	int randomNumber = (std::rand() % 1000);
+	int randomNumber = (std::rand() % 255);
 
 	vx[regName] = value & randomNumber;
 }
@@ -215,7 +160,6 @@ void OP_CXNN(uint16_t params)
 void OP_EX9E(uint16_t params)
 {
 	uint16_t regName = (params & 0x0F00) >> 8; 
-
 	if (keypad[vx[regName]]) 
 	{
 		pc += 2; 
@@ -231,7 +175,6 @@ void OP_EXA1(uint16_t params)
 		pc += 2; 
 	}
 }
-
 
 
 void OP_DXYN(uint16_t params)
@@ -320,16 +263,13 @@ void OP_4XNN(uint16_t params)
 
 void OP_5XY0(uint16_t params)
 {
+	uint16_t regX = (params & 0x0F00) >> 8; 
+	uint16_t regY = (params & 0x00F0) >> 4; 
 
-	uint16_t regValue = (params & 0x0F00) >> 8; 
-
-	uint8_t num_value= (params & 0x00FF); 
-
-	if (vx[regValue] == num_value) 
+	if (vx[regX] == vx[regY]) 
 	{
 		pc += 2; 
 	}
-
 }
 
 void OP_8XY0(uint16_t params)
@@ -398,7 +338,7 @@ void OP_8XY7(uint16_t params)
 	uint16_t regValue_x = (params & 0x0F00) >> 8; 
 	uint16_t regValue_y = (params & 0x00F0) >> 4; 
 
-	if (vx[regValue_x] >= vx[regValue_y]) 
+	if (vx[regValue_y] >= vx[regValue_x]) 
 	{
 		vx[0xf] = 1; 
 	} 
@@ -406,7 +346,7 @@ void OP_8XY7(uint16_t params)
 	{
 		vx[0xf] = 0; 
 	}
-	vx[regValue_y] -= vx[regValue_x];
+	vx[regValue_x] = vx[regValue_y] - vx[regValue_x];
 }
 
 void OP_8XY6(uint16_t params)
@@ -415,15 +355,9 @@ void OP_8XY6(uint16_t params)
 	uint16_t regValue_y = (params & 0x00F0) >> 4; 
 
 	vx[regValue_x] = vx[regValue_y];
-	if (vx[regValue_x] == 0) 
-	{
-		vx[0xf] = 0; 
-	} 
-	else 
-	{
-		vx[0xf] = 1; 
-	}
-	vx[regValue_x] = vx[regValue_x] >> 1; 
+	uint8_t lsb = vx[regValue_x] & 0x01;
+	vx[regValue_x] >>= 1; 
+	vx[0xF] = lsb;
 }
 
 void OP_8XYE(uint16_t params)
@@ -432,25 +366,18 @@ void OP_8XYE(uint16_t params)
 	uint16_t regValue_y = (params & 0x00F0) >> 4; 
 
 	vx[regValue_x] = vx[regValue_y];
-	if (vx[regValue_x] == 0) 
-	{
-		vx[0xf] = 0; 
-	} 
-	else 
-	{
-		vx[0xf] = 1; 
-	}
-	vx[regValue_x] = vx[regValue_x] << 1; 
+	uint8_t msb = (vx[regValue_x] >> 7) & 0x01; 
+	vx[regValue_x] <<= 1; 
+	vx[0xF] = msb; 
 }
 
 
 void OP_9XY0(uint16_t params)
 {
-	uint16_t regValue = (params & 0x0F00) >> 8; 
+	uint16_t regValue_x = (params & 0x0F00) >> 8; 
+	uint16_t regValue_y = (params & 0x00F0) >> 4; 
 
-	uint8_t num_value= (params & 0x00FF); 
-
-	if (vx[regValue] != num_value) 
+	if (vx[regValue_x] != vx[regValue_y]) 
 	{
 		pc += 2; 
 	}
@@ -486,24 +413,36 @@ void OP_FX1E(uint16_t params)
 void OP_FX0A(uint16_t params)
 {
 	uint16_t regValue = (params & 0x0F00) >> 8; 
-	if (vx[regValue] != 1) 
+	bool key_pressed = false;
+	for (int i = 0; i <= 0xF; i++)
 	{
-		pc -= 1; 
+		if (keypad[i] != 0)
+		{
+			vx[regValue] = i; // Save the key hex index
+			key_pressed = true;
+			break;
+		}
+	}
+	if (!key_pressed)
+	{
+		pc -= 2; 
 	}
 }
 
 void OP_FX29(uint16_t params)
 {
 	uint16_t regValue = (params & 0x0F00) >> 8; 
-	indexRegister = vx[regValue];
+	uint16_t character = vx[regValue] & 0x0F; 
+	indexRegister = 0x050 + (character * 5);
 }
 
 void OP_FX33(uint16_t params)
 {
 	uint16_t regValue = (params & 0x0F00) >> 8; 
-	int x = (vx[regValue] >> 4) * 16 + (vx[regValue] >> 8); 
+	uint8_t x = vx[regValue]; 
+
 	int hundreth_place = x / 100; 
-	int tenth_place = (x % 100) / 10; 
+	int tenth_place = (x / 10) % 10; 
 	int one_place = x % 10; 
 	memory[indexRegister] = hundreth_place;
 	memory[indexRegister + 1] = tenth_place;
@@ -513,7 +452,7 @@ void OP_FX33(uint16_t params)
 void OP_FX55(uint16_t params)
 {
 	uint16_t regValue = (params & 0x0F00) >> 8; 
-	for(int i = 0; i < regValue; i++)
+	for(int i = 0; i <= regValue; i++)
 	{
 		memory[indexRegister + i] = vx[i]; 
 	}
@@ -522,7 +461,7 @@ void OP_FX55(uint16_t params)
 void OP_FX65(uint16_t params)
 {
 	uint16_t regValue = (params & 0x0F00) >> 8; 
-	for(int i = 0; i < regValue; i++)
+	for(int i = 0; i <= regValue; i++)
 	{
 		vx[i] = memory[indexRegister + i]; 
 	}
@@ -558,7 +497,7 @@ void decode(uint16_t instruction)
 	uint16_t opcode = (instruction & 0xF000) >> 12;
 	uint16_t params = (instruction & 0x0FFF);
 	uint16_t operation = (instruction & 0x000F); 
-
+	uint16_t f_operation = (instruction & 0x00FF); 
 	switch (opcode) 
 	{
 		case 0x0:
@@ -633,6 +572,10 @@ void decode(uint16_t instruction)
 			}
 		break;
 
+		case 0x9: 
+			OP_9XY0(params); 
+		break;
+
 		case 0xA:
 			OP_ANNN(params); 
 		break;
@@ -647,8 +590,61 @@ void decode(uint16_t instruction)
 
 		case 0xD:
 			OP_DXYN(params); 
+		break;
 
 		case 0xE:
+			if (f_operation == 0x9E) 
+			{
+
+				OP_EX9E(params); 
+			
+			} 
+			else if(f_operation == 0xA1)
+			{
+				OP_EXA1(params); 
+			}
+		break;
+
+		case 0xF: 
+			switch (f_operation) 
+			{
+				case 0x7:
+					OP_FX07(params); 
+				break;
+
+				case 0x15:
+					OP_FX15(params); 
+				break;
+
+				case 0x18: 
+					OP_FX18(params); 
+				break;
+
+				case 0x1E: 
+					OP_FX1E(params); 
+				break;
+
+				case 0x0A:
+					OP_FX0A(params); 
+				break;
+
+				case 0x29:
+					OP_FX29(params); 
+
+				break;
+
+				case 0x33: 
+					OP_FX33(params); 
+				break;
+
+				case 0x55:
+					OP_FX55(params); 
+				break;
+					
+				case 0x65:
+					OP_FX65(params); 
+				break;
+			}
 		break;
 	}
 
@@ -658,124 +654,43 @@ void decode(uint16_t instruction)
 
 int main() 
 {
-	uint16_t params; 
-	OP_FX333(params); 
-	// loadROM("./logo.ch8"); 
-	// int counter = 0; 
-	// SDL_Window* window{};
-	// SDL_Renderer* renderer{};
-	// SDL_CreateWindowAndRenderer("Chip8 Emulator", 640, 320, SDL_WINDOW_RESIZABLE, &window, &renderer); 
-	// bool done = false; 
-	//
-	// while (!done) 
-	// {
-	// 	SDL_Event* e; 
-	// 	while (SDL_PollEvent(e)) 
-	// 	{
-	// 		if (e->type == SDL_EVENT_QUIT) 
-	// 		{
-	// 			done = true;
-	// 		}
-	// 		if (e->type == SDL_EVENT_KEY_DOWN) 
-	// 		{
-	// 			if (e->key.scancode == SDL_SCANCODE_1) 
-	// 			{
-	// 				keypad[0x0] = 1; 
-	// 			}
-	//
-	// 			else if (e->key.scancode == SDL_SCANCODE_2) 
-	// 			{
-	// 				keypad[0x1] = 1; 
-	//
-	// 			}
-	// 			else if (e->key.scancode == SDL_SCANCODE_3) 
-	// 			{
-	// 				keypad[0x2] = 1; 
-	//
-	// 			}
-	// 			else if (e->key.scancode == SDL_SCANCODE_4) 
-	// 			{
-	// 				keypad[0x3] = 1; 
-	//
-	// 			}
-	// 			else if (e->key.scancode == SDL_SCANCODE_Q) 
-	// 			{
-	// 				keypad[0x4] = 1; 
-	//
-	// 			}
-	// 			else if (e->key.scancode == SDL_SCANCODE_W) 
-	// 			{
-	// 				keypad[0x5] = 1; 
-	//
-	// 			}
-	//
-	// 			else if (e->key.scancode == SDL_SCANCODE_E) 
-	// 			{
-	// 				keypad[0x6] = 1; 
-	//
-	// 			}
-	//
-	// 			else if (e->key.scancode == SDL_SCANCODE_R) 
-	// 			{
-	// 				keypad[0x7] = 1; 
-	// 			}
-	//
-	// 			else if (e->key.scancode == SDL_SCANCODE_A) 
-	// 			{
-	// 				keypad[0x8] = 1; 
-	// 			}
-	//
-	// 			else if (e->key.scancode == SDL_SCANCODE_S) 
-	// 			{
-	// 				keypad[0x9] = 1; 
-	// 			}
-	//
-	// 			else if (e->key.scancode == SDL_SCANCODE_D) 
-	// 			{
-	// 				keypad[0xA] = 1; 
-	// 			}
-	//
-	// 			else if (e->key.scancode == SDL_SCANCODE_F) 
-	// 			{
-	// 				keypad[0xB] = 1; 
-	// 			}
-	//
-	// 			else if (e->key.scancode == SDL_SCANCODE_Z) 
-	// 			{
-	// 				keypad[0xC] = 1; 
-	// 			}
-	//
-	// 			else if (e->key.scancode == SDL_SCANCODE_X) 
-	// 			{
-	// 				keypad[0xD] = 1; 
-	// 			}
-	//
-	// 			else if (e->key.scancode == SDL_SCANCODE_C) 
-	// 			{
-	// 				keypad[0xE] = 1; 
-	// 			}
-	//
-	// 			else if (e->key.scancode == SDL_SCANCODE_V) 
-	// 			{
-	// 				keypad[0xF] = 1; 
-	// 			}
-	// 		}
-	// 	}
-	// 	if (delayTimer > 0) 
-	// 	{
-	// 		delayTimer--; 
-	// 	}
-	// 	if (soundTimer > 0) 
-	// 	{
-	// 		soundTimer--; 
-	// 	}
-	// 	uint16_t instruction = fetchInstructions(); 
-	// 	SDL_RenderClear(renderer); 
-	// 	decode(instruction); 
-	// 	draw(renderer); 
-	// 	SDL_RenderPresent(renderer); 
-	// 	SDL_Delay(16);
-	// }
+	loadROM("./Airplane.ch8"); 
+
+	int counter = 0; 
+	SDL_Window* window{};
+	SDL_Renderer* renderer{};
+	SDL_CreateWindowAndRenderer("Chip8 Emulator", 640, 320, SDL_WINDOW_RESIZABLE, &window, &renderer); 
+	bool done = false; 
+
+	while (!done) 
+	{
+		SDL_Event e; 
+		while (SDL_PollEvent(&e)) 
+		{
+			if (e.type == SDL_EVENT_QUIT) 
+			{
+				done = true;
+			}
+			handkeKeyPad(&e);
+		}
+		for (int cycles = 0; cycles < 10; cycles++)
+		{
+			uint16_t instruction = fetchInstructions(); 
+			decode(instruction); 
+		}
+		if (delayTimer > 0) 
+		{
+			delayTimer--; 
+		}
+		if (soundTimer > 0) 
+		{
+			soundTimer--; 
+		}
+		SDL_RenderClear(renderer); 
+		draw(renderer); 
+		SDL_RenderPresent(renderer); 
+		SDL_Delay(16);
+	}
 }
 
 
