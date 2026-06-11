@@ -12,9 +12,7 @@ unsigned char memory[4096]{};
 uint16_t startingAddress = 0x200;
 uint16_t indexRegister = 0;
 uint16_t pc = startingAddress;
-
 uint8_t display[64*32]{}; 
-
 uint8_t vx[16]{};
 std::vector<uint16_t> stack{};
 uint8_t keypad[16]{}; 
@@ -50,10 +48,10 @@ void loadFont()
 	}
 }
 
-void handkeKeyPad(SDL_Event* e)
+void handleKeyPad(SDL_Event* e)
 {
 	int8_t targetKey = 0xFF; 
-	if (e->key.scancode == SDL_SCANCODE_1)	    targetKey = 0x1;
+	if (e->key.scancode == SDL_SCANCODE_1)    targetKey = 0x1;
 	else if (e->key.scancode == SDL_SCANCODE_2) targetKey = 0x2;
 	else if (e->key.scancode == SDL_SCANCODE_3) targetKey = 0x3;
 	else if (e->key.scancode == SDL_SCANCODE_4) targetKey = 0xC;
@@ -74,7 +72,7 @@ void handkeKeyPad(SDL_Event* e)
 	{
 		if (e->type == SDL_EVENT_KEY_DOWN) 
 		{
-		    keypad[targetKey] = 1; 
+			keypad[targetKey] = 1; 
 		}
 		else if (e->type == SDL_EVENT_KEY_UP) 
 		{
@@ -356,7 +354,7 @@ void OP_8XY6(uint16_t params)
 
 	vx[regValue_x] = vx[regValue_y];
 	uint8_t lsb = vx[regValue_x] & 0x01;
-	vx[regValue_x] >>= 1; 
+	vx[regValue_x] = vx[regValue_x] >> 1; 
 	vx[0xF] = lsb;
 }
 
@@ -414,11 +412,11 @@ void OP_FX0A(uint16_t params)
 {
 	uint16_t regValue = (params & 0x0F00) >> 8; 
 	bool key_pressed = false;
-	for (int i = 0; i <= 0xF; i++)
+	for (int i = 0; i < 16; i++)
 	{
 		if (keypad[i] != 0)
 		{
-			vx[regValue] = i; // Save the key hex index
+			vx[regValue] = i; 
 			key_pressed = true;
 			break;
 		}
@@ -521,6 +519,10 @@ void decode(uint16_t instruction)
 
 		case 0x3: 
 			OP_3XNN(params); 
+		break;
+
+		case 0x4:
+			OP_4XNN(params); 
 		break;
 
 		case 0x6:
@@ -654,8 +656,7 @@ void decode(uint16_t instruction)
 
 int main() 
 {
-	loadROM("./Airplane.ch8"); 
-
+	loadROM("./Tetris.ch8"); 
 	int counter = 0; 
 	SDL_Window* window{};
 	SDL_Renderer* renderer{};
@@ -671,13 +672,10 @@ int main()
 			{
 				done = true;
 			}
-			handkeKeyPad(&e);
+			handleKeyPad(&e);
 		}
-		for (int cycles = 0; cycles < 10; cycles++)
-		{
-			uint16_t instruction = fetchInstructions(); 
-			decode(instruction); 
-		}
+		uint16_t instruction = fetchInstructions(); 
+		decode(instruction); 
 		if (delayTimer > 0) 
 		{
 			delayTimer--; 
@@ -689,7 +687,7 @@ int main()
 		SDL_RenderClear(renderer); 
 		draw(renderer); 
 		SDL_RenderPresent(renderer); 
-		SDL_Delay(16);
+		SDL_Delay(2);
 	}
 }
 
