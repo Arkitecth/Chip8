@@ -51,7 +51,7 @@ void loadFont()
 void handleKeyPad(SDL_Event* e)
 {
 	int8_t targetKey = 0xFF; 
-	if (e->key.scancode == SDL_SCANCODE_1)    targetKey = 0x1;
+	if (e->key.scancode == SDL_SCANCODE_1)	    targetKey = 0x1;
 	else if (e->key.scancode == SDL_SCANCODE_2) targetKey = 0x2;
 	else if (e->key.scancode == SDL_SCANCODE_3) targetKey = 0x3;
 	else if (e->key.scancode == SDL_SCANCODE_4) targetKey = 0xC;
@@ -112,6 +112,7 @@ void OP_00E0()
 		display[i] = 0; 
 	}
 }
+
 void OP_1NNN(uint16_t params) 
 {
 	pc = params;
@@ -489,6 +490,40 @@ void draw(SDL_Renderer* renderer)
 	}
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); 
 }
+
+void disassembleChip8(std::string_view rom)
+{
+	std::ifstream file{rom.data(), std::ios::binary | std::ios::ate};
+	std::size_t size = file.tellg(); 
+	file.seekg(0, std::ios::beg); 
+	int dis_pc{};
+	uint8_t buffer[4098]{};
+	file.read((char*)&buffer, size); 
+	while (dis_pc < size) 
+	{
+		uint8_t highByte = buffer[dis_pc] >> 4; 
+		switch (highByte) 
+		{
+			case 0x0: std::cout<< "CLS" << '\n'; break;
+			case 0x1: std::cout<< "JP:" << '\n'; break;
+			case 0x2: std::cout<< "CALL" << '\n'; break;
+			case 0x3: std::cout<< "SET Vy, byte" << '\n'; break;
+			case 0x4: std::cout<< "SNE" << '\n'; break;
+			case 0x5: std::cout<< "SET Vx Vy" << '\n'; break;
+			case 0x6: std::cout<< "LD  Vx, byte" << '\n'; break;
+			case 0x7: std::cout<< "ADD Vx, byte" << '\n'; break;
+			case 0x8: std::cout<< "NOT IMPLEMENTED" << '\n'; break;
+			case 0x9: std::cout<< "OR Vx, Vy" << '\n'; break;
+			case 0xA: std::cout<< "LD 1 ADRR" << '\n'; break;
+			case 0xB: std::cout<< "JP V0 ADRR" << '\n'; break;
+			case 0xC: std::cout<< "RND Vx Byte" << '\n'; break;
+			case 0xD: std::cout<< "DRAW " << '\n'; break;
+			case 0xE: std::cout<< "NOT IMPLEMENTED" << '\n'; break;
+			case 0xF: std::cout<< "LD Vx, DT" << '\n'; break;
+		}
+		dis_pc += 2; 
+	}
+}
 	
 void decode(uint16_t instruction)
 {
@@ -654,41 +689,43 @@ void decode(uint16_t instruction)
 
 
 
+
 int main() 
 {
 	loadROM("./Tetris.ch8"); 
-	int counter = 0; 
-	SDL_Window* window{};
-	SDL_Renderer* renderer{};
-	SDL_CreateWindowAndRenderer("Chip8 Emulator", 640, 320, SDL_WINDOW_RESIZABLE, &window, &renderer); 
-	bool done = false; 
-
-	while (!done) 
-	{
-		SDL_Event e; 
-		while (SDL_PollEvent(&e)) 
-		{
-			if (e.type == SDL_EVENT_QUIT) 
-			{
-				done = true;
-			}
-			handleKeyPad(&e);
-		}
-		uint16_t instruction = fetchInstructions(); 
-		decode(instruction); 
-		if (delayTimer > 0) 
-		{
-			delayTimer--; 
-		}
-		if (soundTimer > 0) 
-		{
-			soundTimer--; 
-		}
-		SDL_RenderClear(renderer); 
-		draw(renderer); 
-		SDL_RenderPresent(renderer); 
-		SDL_Delay(2);
-	}
+	disassembleChip8("./Tetris.ch8"); 
+	// int counter = 0; 
+	// SDL_Window* window{};
+	// SDL_Renderer* renderer{};
+	// SDL_CreateWindowAndRenderer("Chip8 Emulator", 640, 320, SDL_WINDOW_RESIZABLE, &window, &renderer); 
+	// bool done = false; 
+	//
+	// while (!done) 
+	// {
+	// 	SDL_Event e; 
+	// 	while (SDL_PollEvent(&e)) 
+	// 	{
+	// 		if (e.type == SDL_EVENT_QUIT) 
+	// 		{
+	// 			done = true;
+	// 		}
+	// 		handleKeyPad(&e);
+	// 	}
+	// 	uint16_t instruction = fetchInstructions(); 
+	// 	decode(instruction); 
+	// 	if (delayTimer > 0) 
+	// 	{
+	// 		delayTimer--; 
+	// 	}
+	// 	if (soundTimer > 0) 
+	// 	{
+	// 		soundTimer--; 
+	// 	}
+	// 	SDL_RenderClear(renderer); 
+	// 	draw(renderer); 
+	// 	SDL_RenderPresent(renderer); 
+	// 	SDL_Delay(2);
+	// }
 }
 
 
