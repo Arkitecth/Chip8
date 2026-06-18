@@ -502,24 +502,75 @@ void disassembleChip8(std::string_view rom)
 	while (dis_pc < size) 
 	{
 		uint8_t highByte = buffer[dis_pc] >> 4; 
+		uint16_t instruction = buffer[dis_pc] << 8 | buffer[dis_pc + 1]; 
+		uint16_t params = (instruction & 0x0FFF); 
 		switch (highByte) 
 		{
-			case 0x0: std::cout<< "CLS" << '\n'; break;
-			case 0x1: std::cout<< "JP:" << '\n'; break;
-			case 0x2: std::cout<< "CALL" << '\n'; break;
-			case 0x3: std::cout<< "SET Vy, byte" << '\n'; break;
-			case 0x4: std::cout<< "SNE" << '\n'; break;
-			case 0x5: std::cout<< "SET Vx Vy" << '\n'; break;
-			case 0x6: std::cout<< "LD  Vx, byte" << '\n'; break;
-			case 0x7: std::cout<< "ADD Vx, byte" << '\n'; break;
+			case 0x0: 
+				if (instruction == 0x00E0) 
+				{
+					std::cout<< "CLS" << '\n';
+				} 
+				else 
+				{
+					std::cout << "RET" << '\n';
+				}
+				
+			case 0x1: std::cout<< "JMP: " << std::hex << params << '\n'; break;
+			case 0x2: std::cout<< "CALL: " << std::hex << params  << '\n'; break;
+			case 0x3: 
+				{
+					uint8_t vy = (params & 0xF00) >> 8; 
+					uint8_t byte = params & 0x0FF; 
+					std::cout<< "SET Vy:" << std::hex << int(vy) << " byte: " << int(byte) << '\n';
+				}
+			break;
+			case 0x4: 
+				{
+					uint8_t vx = (params & 0xF00) >> 8; 
+					uint8_t byte = params & 0x0FF; 
+					std::cout<< "SNE Vx: " << std::hex << int(vx) << " byte: " << int(byte) << '\n';
+				}
+			break;
+			case 0x5: 
+				{
+					uint8_t vx = (params & 0xF00) >> 8; 
+					uint8_t vy = (params & 0x0F0) >> 4; 
+					std::cout << "SET Vx: " << std::hex << int(vx) << " Vy: " << int(vy) << '\n';
+				}
+			break;
+			case 0x6: 
+				{
+					uint8_t vx = (params & 0xF00) >> 8; 
+					uint8_t byte = params & 0x0FF; 
+					std::cout << "LD  Vx, byte " << " Vx: " << std::hex << int(vx) << " byte: " << int(byte) << '\n'; 
+				}
+			break;
+
+			case 0x7: 
+				{
+					uint8_t vx = (params & 0xF00) >> 8; 
+					uint8_t byte = params & 0x0FF; 
+					std::cout<<  "ADD Vx, byte " << "Vx: " << std::hex << int(vx) << " byte: " << int(byte) << '\n';
+				}
+			break;
+
 			case 0x8: std::cout<< "NOT IMPLEMENTED" << '\n'; break;
-			case 0x9: std::cout<< "OR Vx, Vy" << '\n'; break;
-			case 0xA: std::cout<< "LD 1 ADRR" << '\n'; break;
-			case 0xB: std::cout<< "JP V0 ADRR" << '\n'; break;
-			case 0xC: std::cout<< "RND Vx Byte" << '\n'; break;
+
+			case 0x9: std::cout<< "OR Vx, Vy" << '\n'; 
+				{
+
+					uint8_t vx = (params & 0xF00) >> 8; 
+					uint8_t vy = (params & 0x0F0) >> 4; 
+					std::cout<<  "OR Vx, Vy - " << std::hex << "Vx: " << int(vx) << " Vy: " << int(vy) << '\n';
+				}
+			break;
+			case 0xA: std::cout<< "LD I ADRR " << std::hex <<  params << '\n'; break;
+			case 0xB: std::cout<< "JP V0 ADRR " << std::hex << params << '\n'; break;
+			case 0xC: std::cout<< "RND Vx Byte " << '\n'; break;
 			case 0xD: std::cout<< "DRAW " << '\n'; break;
-			case 0xE: std::cout<< "NOT IMPLEMENTED" << '\n'; break;
-			case 0xF: std::cout<< "LD Vx, DT" << '\n'; break;
+			case 0xE: std::cout<< "NOT IMPLEMENTED " << '\n'; break;
+			case 0xF: std::cout<< " LD Vx, DT " << '\n'; break;
 		}
 		dis_pc += 2; 
 	}
@@ -690,42 +741,42 @@ void decode(uint16_t instruction)
 
 
 
+//disassembleChip8("./Tetris.ch8"); 
 int main() 
 {
-	loadROM("./Tetris.ch8"); 
-	disassembleChip8("./Tetris.ch8"); 
-	// int counter = 0; 
-	// SDL_Window* window{};
-	// SDL_Renderer* renderer{};
-	// SDL_CreateWindowAndRenderer("Chip8 Emulator", 640, 320, SDL_WINDOW_RESIZABLE, &window, &renderer); 
-	// bool done = false; 
-	//
-	// while (!done) 
-	// {
-	// 	SDL_Event e; 
-	// 	while (SDL_PollEvent(&e)) 
-	// 	{
-	// 		if (e.type == SDL_EVENT_QUIT) 
-	// 		{
-	// 			done = true;
-	// 		}
-	// 		handleKeyPad(&e);
-	// 	}
-	// 	uint16_t instruction = fetchInstructions(); 
-	// 	decode(instruction); 
-	// 	if (delayTimer > 0) 
-	// 	{
-	// 		delayTimer--; 
-	// 	}
-	// 	if (soundTimer > 0) 
-	// 	{
-	// 		soundTimer--; 
-	// 	}
-	// 	SDL_RenderClear(renderer); 
-	// 	draw(renderer); 
-	// 	SDL_RenderPresent(renderer); 
-	// 	SDL_Delay(2);
-	// }
+	loadROM("./space_invaders.ch8"); 
+	int counter = 0; 
+	SDL_Window* window{};
+	SDL_Renderer* renderer{};
+	SDL_CreateWindowAndRenderer("Chip8 Emulator", 640, 320, SDL_WINDOW_RESIZABLE, &window, &renderer); 
+	bool done = false; 
+
+	while (!done) 
+	{
+		SDL_Event e; 
+		while (SDL_PollEvent(&e)) 
+		{
+			if (e.type == SDL_EVENT_QUIT) 
+			{
+				done = true;
+			}
+			handleKeyPad(&e);
+		}
+		uint16_t instruction = fetchInstructions(); 
+		decode(instruction); 
+		if (delayTimer > 0) 
+		{
+			delayTimer--; 
+		}
+		if (soundTimer > 0) 
+		{
+			soundTimer--; 
+		}
+		SDL_RenderClear(renderer); 
+		draw(renderer); 
+		SDL_RenderPresent(renderer); 
+		//SDL_Delay(10);
+	}
 }
 
 
